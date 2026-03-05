@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "your-dockerhub-username/express-app"
+        IMAGE_NAME = "express-app"
         APP_PORT = "5000"
     }
 
@@ -10,24 +10,15 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-username/express-app.git'
+                git branch: 'main', url: 'https://github.com/Chathubha/express-app.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
+                    // Build Docker image locally
                     docker.build("${IMAGE_NAME}:latest")
-                }
-            }
-        }
-
-        stage('Push to Docker Hub') {
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                        docker.image("${IMAGE_NAME}:latest").push()
-                    }
                 }
             }
         }
@@ -36,9 +27,12 @@ pipeline {
             steps {
                 script {
                     sh """
-                    docker stop express-app || true
-                    docker rm express-app || true
-                    docker run -d -p ${APP_PORT}:${APP_PORT} --name express-app --env-file .env ${IMAGE_NAME}:latest
+                    # Stop existing container if running
+                    docker stop ${IMAGE_NAME} || true
+                    docker rm ${IMAGE_NAME} || true
+
+                    # Run new container with local Docker image
+                    docker run -d -p ${APP_PORT}:${APP_PORT} --name ${IMAGE_NAME} --env-file .env ${IMAGE_NAME}:latest
                     """
                 }
             }
